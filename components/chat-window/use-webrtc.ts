@@ -1,13 +1,27 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { Conversation } from "./types";
 
 export interface Tool {
   name: string;
   description: string;
-  parameters?: Record<string, any>;
+  parameters: Record<string, unknown>;
+}
+
+interface Message {
+  type: string;
+  text?: string;
+  role?: string;
+  content?: string;
+  session?: {
+    modalities: string[];
+    tools: Tool[];
+    input_audio_transcription: {
+      model: string;
+    };
+  };
 }
 
 interface UseWebRTCAudioSessionReturn {
@@ -16,8 +30,7 @@ interface UseWebRTCAudioSessionReturn {
   startSession: () => Promise<void>;
   stopSession: () => void;
   handleStartStopClick: () => void;
-  registerFunction: (name: string, fn: Function) => void;
-  msgs: any[];
+  registerFunction: (name: string, fn: (...args: unknown[]) => unknown) => void;
   conversation: Conversation[];
   sendTextMessage: (text: string) => void;
 }
@@ -28,22 +41,21 @@ export default function useWebRTCAudioSession(
 ): UseWebRTCAudioSessionReturn {
   const [status, setStatus] = useState("");
   const [isSessionActive, setIsSessionActive] = useState(false);
-  const [msgs, setMsgs] = useState<any[]>([]);
   const [conversation, setConversation] = useState<Conversation[]>([]);
 
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const dataChannelRef = useRef<RTCDataChannel | null>(null);
   const audioStreamRef = useRef<MediaStream | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
-  const functionRegistry = useRef<Record<string, Function>>({});
+  const functionRegistry = useRef<Record<string, (...args: unknown[]) => unknown>>({});
   const ephemeralUserMessageIdRef = useRef<string | null>(null);
 
-  function registerFunction(name: string, fn: Function) {
+  const registerFunction = useCallback((name: string, fn: (...args: unknown[]) => unknown) => {
     functionRegistry.current[name] = fn;
-  }
+  }, []);
 
   function configureDataChannel(dataChannel: RTCDataChannel) {
-    const sessionUpdate = {
+    const sessionUpdate: Message = {
       type: "session.update",
       session: {
         modalities: ["text", "audio"],
@@ -96,7 +108,7 @@ export default function useWebRTCAudioSession(
 
   async function handleDataChannelMessage(event: MessageEvent) {
     try {
-      const msg = JSON.parse(event.data);
+      const msg: Message = JSON.parse(event.data);
 
       switch (msg.type) {
         case "input_audio_buffer.speech_started": {
@@ -147,9 +159,6 @@ export default function useWebRTCAudioSession(
           break;
         }
       }
-
-      setMsgs((prevMsgs) => [...prevMsgs, msg]);
-      return msg;
     } catch (error) {
       console.error("Error handling data channel message:", error);
     }
@@ -266,7 +275,6 @@ export default function useWebRTCAudioSession(
     ephemeralUserMessageIdRef.current = null;
     setIsSessionActive(false);
     setStatus("Session stopped");
-    setMsgs([]);
     setConversation([]);
   }
 
@@ -281,7 +289,7 @@ export default function useWebRTCAudioSession(
   function sendTextMessage(text: string) {
     if (!dataChannelRef.current) return;
 
-    const message = {
+    const message: Message = {
       type: "conversation.item.create",
       item: {
         type: "message",
@@ -311,6 +319,20 @@ export default function useWebRTCAudioSession(
   }
 
   useEffect(() => {
+    // Register all functions by iterating over the object
+    Object.entries(tools || {}).forEach(([name, func]) => {
+      const functionNames: Record<string, string> = {
+        timeFunction: 'getCurrentTime',
+        backgroundFunction: 'changeBackgroundColor',
+        weatherFunction: 'getWeather',
+        calculatorFunction: 'calculate'
+      };
+      
+      registerFunction(functionNames[name], func as (...args: unknown[]) => unknown);
+    });
+  }, [registerFunction]);
+
+  useEffect(() => {
     return () => {
       stopSession();
     };
@@ -323,7 +345,6 @@ export default function useWebRTCAudioSession(
     stopSession,
     handleStartStopClick,
     registerFunction,
-    msgs,
     conversation,
     sendTextMessage,
   };

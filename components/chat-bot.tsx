@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Mic, MicOff, Minimize2, Maximize2, Loader2 } from "lucide-react"
 import useWebRTCAudioSession from "@/hooks/use-webrtc"
 import { Toast } from "@/components/ui/toast"
+import { tools } from "@/lib/tools"
 
 export const ChatBot = () => {
   const [isMinimized, setIsMinimized] = useState(false)
@@ -18,7 +19,14 @@ export const ChatBot = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const audioRef = useRef<HTMLAudioElement>(null)
 
-  const { startSession, stopSession, status } = useWebRTCAudioSession()
+  const { 
+    status,
+    isSessionActive,
+    handleStartStopClick,
+    registerFunction,
+    conversation,
+    sendTextMessage
+  } = useWebRTCAudioSession("alloy", tools)
 
   const toggleMinimize = () => {
     setIsMinimized(!isMinimized)
@@ -26,14 +34,8 @@ export const ChatBot = () => {
 
   const toggleListening = async () => {
     try {
-      if (isListening) {
-        stopSession()
-        setIsListening(false)
-      } else {
-        setIsConnecting(true)
-        await startSession()
-        setIsListening(true)
-      }
+      handleStartStopClick()
+      setIsListening(isSessionActive)
     } catch (error) {
       console.error('Error:', error)
       Toast({
@@ -43,7 +45,6 @@ export const ChatBot = () => {
       })
       // エラー時は状態をリセット
       setIsListening(false)
-      stopSession()
     } finally {
       setIsConnecting(false)
     }

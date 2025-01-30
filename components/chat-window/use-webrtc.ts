@@ -316,7 +316,6 @@ export default function useWebRTCAudioSession(
     dataChannelRef.current.send(JSON.stringify(message));
   }
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     // Register all functions by iterating over the object
     const toolsRef = tools || {};
@@ -330,7 +329,7 @@ export default function useWebRTCAudioSession(
       
       registerFunction(functionNames[name], func as (...args: unknown[]) => unknown);
     });
-  }, [registerFunction]);
+  }, [registerFunction, tools]);
 
   useEffect(() => {
     return () => {

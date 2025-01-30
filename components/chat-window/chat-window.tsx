@@ -7,11 +7,22 @@ import { BroadcastButton } from "./broadcast-button"
 import { TextInput } from "./text-input"
 import { cn } from "@/lib/utils"
 import { AlertCircle } from "lucide-react"
-import useWebRTCAudioSession from "./use-webrtc"
-import { tools } from "@/lib/tools"
+import useWebRTCAudioSession, { Tool } from "./use-webrtc"
+import { tools as libTools } from "@/lib/tools"
 
 export function ChatWindow() {
   const [voice, setVoice] = useState("alloy")
+
+  // Convert tool definitions to Tool type
+  const tools: Tool[] = Object.entries(libTools).map(([name, tool]) => ({
+    type: 'function',
+    name,
+    description: tool.description,
+    parameters: {
+      type: 'object',
+      properties: tool.parameters || {}
+    }
+  }))
 
   const {
     status,
@@ -30,10 +41,29 @@ export function ChatWindow() {
       calculatorFunction: 'calculate'
     };
     
-    Object.entries(tools).forEach(([name, func]) => {
-      registerFunction(functionNames[name], func);
+    // Register tool implementations
+    const toolImplementations: Record<string, (...args: unknown[]) => unknown> = {
+      getCurrentTime: () => new Date().toLocaleTimeString(),
+      changeBackgroundColor: (...args: unknown[]) => {
+        const color = args[0] as string;
+        document.body.style.backgroundColor = color;
+        return `Background color changed to ${color}`;
+      },
+      getWeather: () => "It's sunny today!",
+      calculate: (...args: unknown[]) => {
+        const expression = args[0] as string;
+        return eval(expression).toString();
+      }
+    };
+
+    // Get only the values (function names) from functionNames
+    Object.values(functionNames).forEach(name => {
+      const implementation = toolImplementations[name];
+      if (implementation) {
+        registerFunction(name, implementation);
+      }
     });
-  }, [registerFunction])
+  }, [registerFunction]);
 
   return (
     <motion.div 

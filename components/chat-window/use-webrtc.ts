@@ -5,9 +5,27 @@ import { v4 as uuidv4 } from "uuid";
 import { Conversation } from "./types";
 
 export interface Tool {
+  type: 'function';
   name: string;
   description: string;
-  parameters: Record<string, unknown>;
+  parameters?: {
+    type: string;
+    properties: Record<string, {
+      type: string;
+      description: string;
+    }>;
+  };
+}
+
+interface MessageContent {
+  type: string;
+  text: string;
+}
+
+interface MessageItem {
+  type: string;
+  role: string;
+  content: MessageContent[];
 }
 
 interface Message {
@@ -15,6 +33,7 @@ interface Message {
   text?: string;
   role?: string;
   content?: string;
+  item?: MessageItem;
   session?: {
     modalities: string[];
     tools: Tool[];
@@ -141,17 +160,29 @@ export default function useWebRTCAudioSession(
         }
 
         case "message": {
-          if (msg.role === "assistant") {
+          const role = msg.role || "user";  
+          if (role === "assistant") {
             setConversation((prev) => [
               ...prev,
               {
                 id: uuidv4(),
                 role: "assistant",
-                text: msg.content,
+                text: msg.text || "",
                 timestamp: new Date().toISOString(),
                 isFinal: true,
-                status: "complete",
-              },
+                status: "complete" as const
+              }
+            ]);
+          } else {
+            setConversation((prev) => [
+              ...prev,
+              {
+                id: uuidv4(),
+                role: "user",
+                text: msg.content || "",
+                timestamp: new Date().toISOString(),
+                isFinal: true
+              }
             ]);
           }
           break;

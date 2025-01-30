@@ -3,20 +3,17 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { Mic, MicOff, Minimize2, Maximize2, Loader2 } from "lucide-react"
 import useWebRTCAudioSession from "@/hooks/use-webrtc"
-import { Toast } from "@/components/ui/toast"
+import { useToast } from "@/hooks/use-toast"
 import { tools } from "@/lib/tools"
 
 export const ChatBot = () => {
   const [isMinimized, setIsMinimized] = useState(false)
   const [isListening, setIsListening] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
-  const [inputText, setInputText] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const audioRef = useRef<HTMLAudioElement>(null)
+  const { toast } = useToast()
 
   const { 
     status,
@@ -39,7 +36,7 @@ export const ChatBot = () => {
       handleStartStopClick()
     } catch (error) {
       console.error('Error:', error)
-      Toast({
+      toast({
         variant: "destructive",
         title: "エラーが発生しました",
         description: status || "マイクの接続に失敗しました。",

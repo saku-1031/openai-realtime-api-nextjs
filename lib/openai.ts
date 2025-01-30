@@ -33,7 +33,7 @@ export async function generateSpeech(text: string) {
   try {
     const mp3 = await openai.audio.speech.create({
       model: "tts-1",
-      voice: "shimizu",
+      voice: "nova",  // Use nova voice for Japanese
       input: text,
     })
 

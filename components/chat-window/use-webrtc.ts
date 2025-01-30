@@ -27,8 +27,6 @@ interface Message {
 interface UseWebRTCAudioSessionReturn {
   status: string;
   isSessionActive: boolean;
-  startSession: () => Promise<void>;
-  stopSession: () => void;
   handleStartStopClick: () => void;
   registerFunction: (name: string, fn: (...args: unknown[]) => unknown) => void;
   conversation: Conversation[];
@@ -320,7 +318,8 @@ export default function useWebRTCAudioSession(
 
   useEffect(() => {
     // Register all functions by iterating over the object
-    Object.entries(tools || {}).forEach(([name, func]) => {
+    const toolsRef = tools || {};
+    Object.entries(toolsRef).forEach(([name, func]) => {
       const functionNames: Record<string, string> = {
         timeFunction: 'getCurrentTime',
         backgroundFunction: 'changeBackgroundColor',
@@ -341,8 +340,6 @@ export default function useWebRTCAudioSession(
   return {
     status,
     isSessionActive,
-    startSession,
-    stopSession,
     handleStartStopClick,
     registerFunction,
     conversation,

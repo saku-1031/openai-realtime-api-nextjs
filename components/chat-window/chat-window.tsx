@@ -16,27 +16,24 @@ export function ChatWindow() {
   const {
     status,
     isSessionActive,
-    startSession,
-    stopSession,
     handleStartStopClick,
     registerFunction,
-    msgs,
     conversation,
     sendTextMessage
   } = useWebRTCAudioSession(voice, tools)
 
   useEffect(() => {
+    const functionNames: Record<string, string> = {
+      timeFunction: 'getCurrentTime',
+      backgroundFunction: 'changeBackgroundColor',
+      weatherFunction: 'getWeather',
+      calculatorFunction: 'calculate'
+    };
+    
     Object.entries(tools).forEach(([name, func]) => {
-      const functionNames: Record<string, string> = {
-        timeFunction: 'getCurrentTime',
-        backgroundFunction: 'changeBackgroundColor',
-        weatherFunction: 'getWeather',
-        calculatorFunction: 'calculate'
-      };
-      
       registerFunction(functionNames[name], func);
     });
-  }, [registerFunction, tools])
+  }, [registerFunction])
 
   return (
     <motion.div 

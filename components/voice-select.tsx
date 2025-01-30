@@ -10,20 +10,18 @@ interface VoiceSelectorProps {
 export function VoiceSelector({ value, onValueChange }: VoiceSelectorProps) {
   const { t } = useTranslations()
   return (
-    <div className="form-group space-y-2">
-      <Label htmlFor="voiceSelect" className="text-sm font-medium">{t('voice.select')}</Label>
-      <Select value={value} onValueChange={onValueChange}>
-        <SelectTrigger className="w-full">
-          <SelectValue placeholder={t('voice.select')} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="ash">{t('voice.ash')}</SelectItem>
-          <SelectItem value="ballad">{t('voice.ballad')}</SelectItem>
-          <SelectItem value="coral">{t('voice.coral')}</SelectItem>
-          <SelectItem value="sage">{t('voice.sage')}</SelectItem>
-          <SelectItem value="verse">{t('voice.verse')}</SelectItem>
-        </SelectContent>
-      </Select>
-    </div>
+    <Select value={value} onValueChange={onValueChange}>
+      <SelectTrigger className="w-[140px] h-8 text-sm">
+        <SelectValue placeholder={t('voice.select')} />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="alloy">{t('voice.alloy')}</SelectItem>
+        <SelectItem value="echo">{t('voice.echo')}</SelectItem>
+        <SelectItem value="fable">{t('voice.fable')}</SelectItem>
+        <SelectItem value="onyx">{t('voice.onyx')}</SelectItem>
+        <SelectItem value="nova">{t('voice.nova')}</SelectItem>
+        <SelectItem value="shimmer">{t('voice.shimmer')}</SelectItem>
+      </SelectContent>
+    </Select>
   )
-} 
+}

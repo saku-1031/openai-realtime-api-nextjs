@@ -3,100 +3,123 @@
 import React, { useEffect, useState } from "react"
 import useWebRTCAudioSession from "@/hooks/use-webrtc"
 import { tools } from "@/lib/tools"
+import { motion, AnimatePresence } from "framer-motion"
 import { Welcome } from "@/components/welcome"
 import { VoiceSelector } from "@/components/voice-select"
 import { BroadcastButton } from "@/components/broadcast-button"
-import { StatusDisplay } from "@/components/status"
-import { TokenUsageDisplay } from "@/components/token-usage"
-import { MessageControls } from "@/components/message-controls"
-import { ToolsEducation } from "@/components/tools-education"
 import { TextInput } from "@/components/text-input"
-import { motion } from "framer-motion"
-import { useToolsFunctions } from "@/hooks/use-tools"
+import { ToolsEducation } from "@/components/tools-education"
+import { cn } from "@/lib/utils"
+import { AlertCircle } from "lucide-react"
 
-const App: React.FC = () => {
+export default function App() {
   // State for voice selection
-  const [voice, setVoice] = useState("ash")
+  const [voice, setVoice] = useState("alloy")
 
-  // WebRTC Audio Session Hook
   const {
     status,
     isSessionActive,
-    registerFunction,
+    startSession,
+    stopSession,
     handleStartStopClick,
+    registerFunction,
     msgs,
     conversation,
     sendTextMessage
   } = useWebRTCAudioSession(voice, tools)
 
-  // Get all tools functions
-  const toolsFunctions = useToolsFunctions();
-
   useEffect(() => {
     // Register all functions by iterating over the object
-    Object.entries(toolsFunctions).forEach(([name, func]) => {
+    Object.entries(tools).forEach(([name, func]) => {
       const functionNames: Record<string, string> = {
         timeFunction: 'getCurrentTime',
         backgroundFunction: 'changeBackgroundColor',
-        partyFunction: 'partyMode',
-        launchWebsite: 'launchWebsite', 
-        copyToClipboard: 'copyToClipboard',
-        scrapeWebsite: 'scrapeWebsite'
+        weatherFunction: 'getWeather',
+        calculatorFunction: 'calculate'
       };
       
       registerFunction(functionNames[name], func);
     });
-  }, [registerFunction, toolsFunctions])
+  }, [registerFunction, tools])
 
   return (
-    <main className="h-full">
-      <motion.div 
-        className="container flex flex-col items-center justify-center mx-auto max-w-3xl my-20 p-12 border rounded-lg shadow-xl"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
+    <main className="min-h-screen bg-background">
+      <motion.div
+        className="container mx-auto py-8 px-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
         <Welcome />
-        
+
         <motion.div 
-          className="w-full max-w-md bg-card text-card-foreground rounded-xl border shadow-sm p-6 space-y-4"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
+          className="fixed bottom-4 right-4 w-80 bg-card text-card-foreground rounded-xl border shadow-lg overflow-hidden"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.4 }}
         >
-          <VoiceSelector value={voice} onValueChange={setVoice} />
-          
-          <div className="flex flex-col items-center gap-4">
+          <div className="flex items-center justify-between p-3 border-b bg-muted/50">
+            <VoiceSelector value={voice} onValueChange={setVoice} />
             <BroadcastButton 
               isSessionActive={isSessionActive} 
               onClick={handleStartStopClick}
             />
           </div>
-          {msgs.length > 4 && <TokenUsageDisplay messages={msgs} />}
-          {status && (
-            <motion.div 
-              className="w-full flex flex-col gap-2"
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <MessageControls conversation={conversation} msgs={msgs} />
-              <TextInput 
-                onSubmit={sendTextMessage}
-                disabled={!isSessionActive}
-              />
-            </motion.div>
-          )}
+
+          <div className="p-3 space-y-3">
+            <AnimatePresence>
+              {status && status.includes("Error") && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="bg-destructive/10 text-destructive text-sm p-2 rounded-md flex items-start gap-2"
+                >
+                  <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <p>{status}</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {conversation.length > 0 && (
+              <div className="space-y-3 max-h-[300px] overflow-y-auto">
+                {conversation.map((msg, i) => (
+                  <div
+                    key={i}
+                    className={cn(
+                      "p-2 rounded-lg text-sm",
+                      msg.role === "assistant" 
+                        ? "bg-muted" 
+                        : "bg-primary/10 ml-auto"
+                    )}
+                  >
+                    {msg.text}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {status && (
+              <motion.div 
+                className="space-y-3"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <TextInput 
+                  onSubmit={sendTextMessage}
+                  disabled={!isSessionActive}
+                />
+              </motion.div>
+            )}
+          </div>
         </motion.div>
         
-        {status && <StatusDisplay status={status} />}
-        <div className="w-full flex flex-col items-center gap-4">
+        <div className="space-y-8">
           <ToolsEducation />
         </div>
       </motion.div>
     </main>
   )
 }
-
-export default App;

@@ -385,6 +385,13 @@ export default function useWebRTCAudioSession(
    */
   async function startSession() {
     try {
+      // 既存のセッションをクリーンアップ
+      if (peerConnectionRef.current || audioStreamRef.current) {
+        stopSession();
+        // 少し待ってから新しいセッションを開始
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
       setStatus("Requesting microphone access...");
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       audioStreamRef.current = stream;
